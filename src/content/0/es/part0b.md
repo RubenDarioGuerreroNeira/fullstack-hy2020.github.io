@@ -1,4 +1,51 @@
----
+flowchart
+    A[Usuario ingresa texto en el campo de texto] --> B[Usuario hace clic en el botón 'Guardar']
+    B --> C[Navegador envía una solicitud POST a /new_note con el contenido de la nota]
+    C --> D[Servidor recibe la solicitud POST y guarda la nueva nota]
+    D --> E[Servidor responde con un código de estado 302 (Redirigir)]
+    E --> F[Navegador sigue la redirección y envía una solicitud GET a /notes]
+    F --> G[Servidor responde con el HTML actualizado que incluye la nueva nota]
+    G --> H[Navegador renderiza la página actualizada mostrando la nueva nota]
+
+
+sequenceDiagram
+    participant Browser
+    participant Server
+
+    Browser->>Server: GET https://studies.cs.helsinki.fi/exampleapp/spa
+    activate Server
+    Server-->>Browser: HTML document
+    deactivate Server
+
+    Browser->>Server: GET https://studies.cs.helsinki.fi/exampleapp/main.css
+    activate Server
+    Server-->>Browser: CSS file
+    deactivate Server
+
+    Browser->>Server: GET https://studies.cs.helsinki.fi/exampleapp/spa.js
+    activate Server
+    Server-->>Browser: JavaScript file
+    deactivate Server
+
+    Note right of Browser: The browser starts executing the JavaScript code that fetches the JSON from the server
+
+    Browser->>Server: GET https://studies.cs.helsinki.fi/exampleapp/data.json
+    activate Server
+    Server-->>Browser: [{ "content": "HTML is easy", "date": "2023-1-1" }, ... ]
+    deactivate Server
+
+    Note right of Browser: The browser renders the notes on the page
+----
+
+flowchart
+    A[Usuario ingresa texto en el campo de texto] --> B[Usuario hace clic en el botón 'Guardar']
+    B --> C[Navegador envía una solicitud POST a /new_note_spa con el contenido de la nota]
+    C --> D[Servidor recibe la solicitud POST y guarda la nueva nota]
+    D --> E[Servidor responde con el estado JSON actualizado que incluye la nueva nota]
+    E --> F[Navegador recibe la respuesta JSON y actualiza la vista sin recargar la página]
+
+
+
 mainImage: ../../../images/part-0.svg
 part: 0
 letter: b
