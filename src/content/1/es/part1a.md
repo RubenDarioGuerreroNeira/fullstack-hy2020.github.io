@@ -1,3 +1,56 @@
+import React from 'react'
+
+const Header = ({ course }) => {
+  return (
+    <h1>{course}</h1>
+  )
+}
+
+const Parts = (props) => {
+  return (
+    <p>{props.part} {props.exercises}</p>
+
+  )
+}
+
+const Content = ({ parts }) => {
+  return (
+    <div>
+      {parts.map(part => (<p key={part.name}>
+        {part.name} {part.exercises}
+      </p>))}
+    </div>
+
+  )
+}
+
+const Total = ({ parts }) => {
+  return (
+    <p>Number of exercises {parts.reduce((s, p) => s + p.exercises, 0)}</p>
+  )
+}
+
+
+const App = () => {
+  const course = 'Half Stack application development'
+  const part1 = 'Fundamentals of React'
+  const exercises1 = 10
+  const part2 = 'Using props to pass data'
+  const exercises2 = 7
+  const part3 = 'State of a component'
+  const exercises3 = 14
+
+  return (
+    <div>
+      <Header course={course} />
+      <Content parts={[{ name: part1, exercises: exercises1 }, { name: part2, exercises: exercises2 }, { name: part3, exercises: exercises3 }]} />
+      <Total parts={[{ name: part1, exercises: exercises1 }, { name: part2, exercises: exercises2 }, { name: part3, exercises: exercises3 }]} />
+
+    </div>
+  )
+}
+
+export default App
 --- 
 mainImage: ../../../images/part-1.svg 
 part: 1 
