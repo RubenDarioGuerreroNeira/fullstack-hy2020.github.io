@@ -1,3 +1,122 @@
+import { useState } from 'react'
+import './App.css'
+
+// Componente History
+const History = ({ allClicks }) => {
+  if (allClicks.length === 0) {
+    return <div>No hay clics. Presiona un botón para comenzar.</div>
+  }
+  return (
+    <div>Historial de clics: {allClicks.join(' ')}</div>
+  )
+}
+
+// Componente para mostrar el promedio
+const Tt = ({ good, neutral, bad }) => {
+  const totalClicks = bad + neutral + good
+  const avg = totalClicks > 0 ? (good - bad) / totalClicks : 0
+  return <p>Promedio: {avg.toFixed(3)}</p>
+}
+
+// Componente para mostrar el porcentaje de comentarios positivos
+const Positive = ({ good, neutral, bad }) => {
+  const totalClicks = good + bad + neutral
+  const promPos = totalClicks > 0 ? (good / totalClicks) * 100 : 0
+  return <p>Promedio Positivo: {promPos.toFixed(1)} %</p>
+}
+
+
+
+function App() {
+  const [allClicks, setAllClicks] = useState([])
+  const [good, setGood] = useState(0)
+  const [neutral, setNeutral] = useState(0)
+  const [bad, setBad] = useState(0)
+  const anecdotes = [
+    'If it hurts, do it more often.',
+    'Adding manpower to a late software project makes it later!',
+    'The first 90 percent of the code accounts for the first 10 percent of the development time...The remaining 10 percent of the code accounts for the other 90 percent of the development time.',
+    'Any fool can write code that a computer can understand. Good programmers write code that humans can understand.',
+    'Premature optimization is the root of all evil.',
+    'Debugging is twice as hard as writing the code in the first place. Therefore, if you write the code as cleverly as possible, you are, by definition, not smart enough to debug it.',
+    'Programming without an extremely heavy use of console.log is same as if a doctor would refuse to use x-rays or blood tests when diagnosing patients.',
+    'The only way to go fast, is to go well.'
+  ]
+  const [selected, setSelected] = useState(0)
+  const [votes, setVotes] = useState(new Array(anecdotes.length).fill(0));
+
+
+  const Ramdom=()=>{
+    const Ram=Math.floor(Math.random()*anecdotes.length)
+    setSelected(Ram)
+  }
+  // Manejo de votos
+  const handleVote = () => {
+    const newVotes = [...votes];
+    newVotes[selected] += 1;
+    setVotes(newVotes);
+  };
+
+  // Manejadores de clics
+  const handleGood = () => {
+    setGood(good + 1)
+    setAllClicks(allClicks.concat('G'))
+  }
+
+  const handleNeutral = () => {
+    setNeutral(neutral + 1)
+    setAllClicks(allClicks.concat('N'))
+  }
+
+  const handleBad = () => {
+    setBad(bad + 1)
+    setAllClicks(allClicks.concat('B'))
+  }
+
+  // Variable para verificar si se han registrado clics
+  const feedbackGiven = allClicks.length > 0
+
+  return (
+    <>
+      <div>
+        <p className="read-the-docs">Dar Feedback</p>
+        <p>------------------------------------------------------</p>
+        {!feedbackGiven }
+           <>
+        <button onClick={handleGood}>Good</button>
+        <button onClick={handleNeutral}>Neutral</button>
+        <button onClick={handleBad}>Bad</button>
+        
+        <button onClick={Ramdom}> Anecdotes Random</button>
+        <p>{anecdotes[selected]}</p>
+        <p>has {votes[selected]} votes</p>
+        <button onClick={handleVote}>Vote</button>
+        <p></p>NO FEEDBACK GIVEN
+        
+        </>
+       
+        {feedbackGiven && (
+          <>
+            <p>------------------------------------------------------</p>
+            <p>Estadísticas:</p>
+            
+            <p>Good: {good}</p>
+            <p>Neutral: {neutral}</p>
+            <p>Bad: {bad}</p>
+            <p>Total Clicks: {good + neutral + bad}</p>
+            <Tt good={good} neutral={neutral} bad={bad} />
+            <Positive good={good} neutral={neutral} bad={bad} />
+            <History allClicks={allClicks} />
+          </>
+        )}
+      </div>
+    </>
+  )
+}
+
+export default App
+
+
 ---
 mainImage: ../../../images/part-1.svg
 part: 1
