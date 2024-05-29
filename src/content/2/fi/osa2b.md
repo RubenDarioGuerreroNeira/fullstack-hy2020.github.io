@@ -1,3 +1,113 @@
+import { useState, useEffect } from 'react'
+
+const App = () => {
+  const [persons, setPersons] = useState([
+    { name: 'Arto Hellas', number : '   040-123456' },
+    { name: 'John Harrison', number : ' 39-44-5323523' },
+    { name: 'John Johnson', number : '  12-43-234345' }
+  ])
+  const [newName, setNewName] = useState('')
+  const[error,setError]=useState(null)
+  const[newNumber,setNewNumber]=useState('')
+
+  const addName = (event) => {
+    event.preventDefault() // Evita el comportamiento por defecto del formulario
+    if(persons.find(person => person.name === newName)) {
+      setError('Name already exists')
+      setTimeout(() => {
+        setError(null)
+        alert('Name already exists')
+      }, 5000  )
+      return
+    }
+
+    const findName=(event)=>{
+
+      const person = persons.find(person => person.name === 'John Johnson')
+      if (person) {
+        person.number = '040-123456'
+      }
+      console.log(person)
+    }
+    
+    const personObject = {
+      name: newName,
+      number:newNumber
+    }
+    setPersons(persons.concat(personObject))
+    setNewName('')
+    setNewNumber('')
+  }
+
+  const handleNameChange = (event) => {
+    setNewName(event.target.value)
+    
+  }
+
+  const handleNumberChange = (event) => {
+    setNewNumber(event.target.value)
+  }
+  const handleSearchChange = (event) => {
+    setSearch(event.target.value)
+  }
+  const [search, setSearch] = useState('')
+  
+      const filteredPersons = persons.filter(person =>
+      person.name.toLowerCase().includes(search.toLowerCase())
+    )
+     
+
+  useEffect(() => {
+    console.log('Persons state updated:', persons)
+  }, [persons])
+
+  
+
+  return (
+    <div>
+      <h2>Phonebook</h2>
+      
+      <form onSubmit={addName}>
+        <div>
+          name: <input value={newName} onChange={handleNameChange} />
+          </div>
+          
+          <div>
+          number: <input value={newNumber} onChange={handleNumberChange} />
+          </div>
+        
+        <div>
+          <button type="submit">add</button>
+        </div>
+      
+      </form>
+      <h2>Numbers</h2>
+      {persons.length > 0 && (
+        <div>
+          {persons.map(person => <p key={person.name}>{person.name}
+          {person.number} </p>)}
+        </div> )}
+      
+      
+      <div>Search <input value={search} onChange={handleSearchChange}/></div>
+      {search.length === 0? (<p>No Results Found</p> )
+      :
+      (<div>
+          {filteredPersons.map(person => (
+            <p key={person.name}>{person.name} {person.number}</p>
+          ))}
+        </div>
+       
+      )}
+    </div>
+  )
+}
+
+export default App
+
+
+
+
 ---
 mainImage: ../../../images/part-2.svg
 part: 2
