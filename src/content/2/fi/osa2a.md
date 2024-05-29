@@ -1,3 +1,64 @@
+import React from 'react';
+const App = () => {
+
+  const course = {
+    name: 'Half Stack Application Development',
+    id: 1,
+    parts: [
+      {
+        name: 'Fundamentals of React',
+        exercises: 10,
+        id: 1
+      },
+      {
+        name: 'Using props to pass data',
+        exercises: 7,
+        id: 2
+      },
+      {
+        name: 'State of a component',
+        exercises: 14,
+        id: 3
+      }
+    ]
+  }
+  
+const Header = ({name}) => {
+    return (
+    <div>
+      <h2>{course.name}</h2>
+    </div>
+  )
+}
+
+// Suggested code may be subject to a license. Learn more: ~LicenseLog:1499021509.
+const Content = ({parts}) => {
+return(
+<div>
+  {parts.map(part => <p key={part.id}>{part.name} {part.exercises}</p>)}
+ </div>)
+}
+
+const Total = ({ parts }) => {
+  
+  return (
+    <div>
+     <p>Number of exercises: {parts.reduce((sum, part) => sum + part.exercises, 0)} </p>    
+    </div>
+  );
+};
+
+  return (
+    <div>
+      <h1> {Header(course)}</h1>
+      <h3>{Content(course)}</h3>
+      <h3>{Total(course)}</h3>
+            
+    </div>
+  );
+};
+
+export default App;
 ---
 mainImage: ../../../images/part-2.svg
 part: 2
