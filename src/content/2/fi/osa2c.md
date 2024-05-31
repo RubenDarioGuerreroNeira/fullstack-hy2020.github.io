@@ -1,4 +1,57 @@
----
+--App.jsx------------
+
+import React, { useState, useEffect } from 'react'
+import axios from 'axios'
+
+const App = () => {
+  const [notes, setNotes] = useState([])
+  
+  const hook = () => {
+    axios.get('http://localhost:3001/persons').then(response => {
+      console.log('usando Hook');
+      setNotes(response.data)
+    })
+  }
+  useEffect(hook, [])
+
+  console.log('Render', notes.length, 'People');
+  console.log('Data', notes)
+}
+export default App
+
+------main.jsx--------------
+import ReactDOM from 'react-dom/client'
+import App from './App.jsx'
+
+---db.json---------------
+
+{
+  "persons":[
+    { 
+      "name": "Arto Hellas", 
+      "number": "040-123456",
+      "id": 1
+    },
+    { 
+      "name": "Ada Lovelace", 
+      "number": "39-44-5323523",
+      "id": 2
+    },
+    { 
+      "name": "Dan Abramov", 
+      "number": "12-43-234345",
+      "id": 3
+    },
+    { 
+      "name": "Mary Poppendieck", 
+      "number": "39-23-6423122",
+      "id": 4
+    }
+  ]
+}
+  
+  
+  ---
 mainImage: ../../../images/part-2.svg
 part: 2
 letter: c
