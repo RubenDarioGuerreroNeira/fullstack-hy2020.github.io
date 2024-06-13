@@ -1,4 +1,315 @@
----
+Styles.css---
+h1{
+    font-size: 3.2em;
+    font-style: italic;
+    line-height: 1.1;
+    color:rgb(116, 209, 158)
+    
+}
+
+h2{
+    font-size: 2.2em;
+    font-style: italic;
+    line-height: 1.1;
+    color:rgb(124, 220, 236)
+
+}
+
+input {
+    /* Tamaño y forma del input */
+    width: 100%;
+    height: 40px;
+    border-radius: 5px;
+  
+    /* Estilos del borde */
+    border: 1px solid #ccc;
+    border-width: 1px;
+    border-style: solid;
+    border-color: #ccc;
+  
+    /* Estilos del texto */
+    font-size: 16px;
+    color: #333;
+    padding: 0 10px;
+  
+    /* Efectos de transición */
+    transition: border-color 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+  }
+  
+  /* Estilos cuando el input está enfocado */
+  input:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+  }
+  
+  /* Estilos cuando el input está deshabilitado */
+  input:disabled {
+    background-color: #f5f5f5;
+    color: #999;
+    cursor: not-allowed;
+  }
+
+ .error{
+    color: red;
+    background: lightgrey;
+    font-size: 20px;
+    border-style: solid;
+    border-radius: 5px;
+    padding: 10px;
+    margin-bottom: 10px;
+  }
+   --------------------App.jsx------------
+
+   import { useState, useEffect } from 'react'
+import Communication from './Comunication'
+// country
+import axios from 'axios';
+
+const Notification = ({ message }) => {
+  if (message === null) {
+    return null
+  }
+
+  return (
+    <div className="error">
+      {message}
+    </div>
+  )
+}
+
+// country/////////////////////////////////////////////////////
+const CountryInfo = ({ country }) => {
+  return (
+    <div>
+      <h2>{country.name.common}</h2>
+      <p>Capital: {country.capital}</p>
+      <p>Population: {country.population}</p>
+      <p>Area: {country.area} km²</p>
+      <p>Languages: {Object.values(country.languages).join(', ')}</p>
+      <img src={country.flags.svg} alt={`Flag of ${country.name.common}`} width="200" />
+    </div>
+  );
+};
+////////////////////////////////////////////////////////////////////
+
+const App = () => {
+  //countries//////////////////////////////////////////////
+
+  const [countries, setCountries] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filteredCountries, setFilteredCountries] = useState([]);
+
+  useEffect(() => {
+    const fetchCountries = async () => {
+      try {
+        const response = await axios.get('https://studies.cs.helsinki.fi/restcountries/api/all');
+        setCountries(response.data);
+      } catch (error) {
+        console.error('Error fetching countries:', error);
+      }
+    };
+    fetchCountries();
+  }, []);
+
+  useEffect(() => {
+    const filtered = countries.filter((country) =>
+      country.name.common.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    setFilteredCountries(filtered);
+  }, [countries, searchTerm]);
+
+  const handleSearch = (event) => {
+    setSearchTerm(event.target.value);
+  };
+  
+  //////////////////////////////////////////////////////////////
+
+
+  const [persons, setPersons] = useState([
+    { name: 'Arto Hellas', number : '   040-123456' },
+    { name: 'John Harrison', number : ' 39-44-5323523' },
+    { name: 'John Johnson', number : '  12-43-234345' }
+  ])
+  const [newName, setNewName] = useState('')
+  const[error,setError]=useState(null)
+  const[newNumber,setNewNumber]=useState('')
+  const [confirmReplace, setConfirmReplace] = useState(false);
+  const [replacePErson,setReplaceperson]=useState( null)
+  const [errorMessage,seterrorMessage]=useState('Waiting')
+  
+
+  const addName = (event) => {
+    event.preventDefault() // Evita el comportamiento por defecto del formulario
+// Suggested code may be subject to a license. Learn more: ~LicenseLog:2388366658.
+    const existingPerson=persons.find(person => person.name === newName)
+// Suggested code may be subject to a license. Learn more: ~LicenseLog:1772284877.
+    if(existingPerson){ 
+      const confirmerPerson=window.confirm(`${newName} is already added to phonebook, replace the old number with a new one?`)
+      
+      if(confirmerPerson){
+        const updatePerson=persons.map(p=>p.name===newName?{...p,name:newName,number:newNumber}:p)
+        setPersons(updatePerson)
+        setNewName('');
+        setNewNumber('');
+        setConfirmReplace(false);
+        setReplacePerson(null);
+      }
+       
+    }
+    
+    if(persons.find(person => person.name === newName)) {
+      Communication.manejarError(newName)
+         
+      // setError('Name already exists')
+      // setTimeout(() => {
+      //   setError(null)
+      //   alert('Name already exists')
+      // }, 5000  )
+      return
+    }
+
+    const findName=(event)=>{
+
+      const person = persons.find(person => person.name === 'John Johnson')
+      if (person) {
+        person.number = '040-123456'
+      }
+      console.log(person)
+    }
+    
+    const personObject = {
+      name: newName,
+      number:newNumber
+    }
+    setPersons(persons.concat(personObject))
+    setNewName('')
+    setNewNumber('')
+    seterrorMessage(newName)
+    
+  }
+
+  const handleNameChange = (event) => {
+    setNewName(event.target.value)
+    
+  }
+
+  const handleNumberChange = (event) => {
+    setNewNumber(event.target.value)
+  }
+  const handleSearchChange = (event) => {
+    setSearch(event.target.value)
+  }
+  
+  const [search, setSearch] = useState('')
+  
+      const filteredPersons = persons.filter(person =>
+      person.name.toLowerCase().includes(search.toLowerCase())
+    )
+
+    const handleDelete = (name) => {
+      const confirmDelete = window.confirm(`Are you sure you want to delete ${name}?`);
+      if (confirmDelete) {
+        const updatedPersons = persons.filter(person => person.name !== name);
+        setPersons(updatedPersons);
+      }
+    };
+     
+
+  useEffect(() => {
+    console.log('Persons state updated:', persons)
+  }, [persons])
+
+  return (
+   
+   ///////////////////countries /////////////////////////////
+   <div>
+      
+      <h1>Country Information</h1>
+   <input
+     type="text"
+     placeholder="Search for a country"
+     value={searchTerm}
+     onChange={handleSearch}
+   />
+   {filteredCountries.length > 10 ? (
+     <p>Too many matches, specify another filter</p>
+   ) : filteredCountries.length === 1 ? (
+     <CountryInfo country={filteredCountries[0]} />
+   ) : (
+     filteredCountries.map((country) => (
+       <div key={country.name.common}>
+         {country.name.common}{' '}
+         <button onClick={() => setSearchTerm(country.name.common)}>Show</button>
+       </div>
+     ))
+   )}
+ //countries////////////////////////////////////////////////
+
+
+      <h1 className='h1'>Phonebook</h1>
+      <Notification message={errorMessage} /> 
+      
+      <form onSubmit={addName}>
+        <div>
+          Name: <input value={newName} onChange={handleNameChange} />
+          </div>
+          
+          <div>
+          Phone Number: <input value={newNumber} onChange={handleNumberChange} />
+          </div>
+        
+        <div>
+          <button type="submit">add</button>
+        </div>
+      
+      </form>
+      <h2>Numbers</h2>
+      {persons.length > 0 && (
+        <div>
+          {persons.map(person => <p key={person.name}>{person.name}
+          {person.number} 
+          <button onClick={() => handleDelete(person.name)}>Delete</button>
+          </p>)}
+        </div> )}
+      
+      
+      <div>Search <input value={search} onChange={handleSearchChange}/></div>
+      {search.length === 0? (<p>No Results Found</p> )
+      :
+      (<div>
+          {filteredPersons.map(person => (
+            <p key={person.name}>{person.name} {person.number}
+            <button onClick={() => handleDelete(person.name)}>Delete</button>
+             </p>
+          ))}
+        </div>
+       
+      )}
+    </div>
+  )
+}
+
+export default App
+
+
+--------Main.jsx-----------------
+
+
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import App from './App';
+import './css/Styles.css'
+
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>
+);
+
+
 mainImage: ../../../images/part-2.svg
 part: 2
 letter: e
