@@ -1,4 +1,285 @@
----
+--------------------------------------------------index.ts---------------------------------------------------------------------------------------------------------------------
+const express = require('express');
+// const { request } = require('http');
+const path = require('path')
+
+const app = express();
+app.use(express.json());
+
+const morgan = require('morgan');
+
+
+
+morgan.token('body', (req) => JSON.stringify(req.body));
+
+app.use(morgan(':method :url :status :res[content-length] - :response-time ms :body'));
+
+
+const port = parseInt(process.env.PORT) || process.argv[3] || 8080;
+
+let persons = [
+  {
+    id: 1,
+    name: "Paul Sanchez",
+    numbrer: 147589969
+  },
+  {
+    id: 2,
+    name: "Frank B",
+    numbrer: 485858255
+  },
+  {
+    id: 3,
+    name: "David B.",
+    numbrer: 858589969
+  },
+  {
+    id: 4,
+    name: "Rubén G..",
+    numbrer: 445555569
+  }
+]
+
+// app.use(express.static(path.join(__dirname, 'public')))
+app.use(express.static(path.join(__dirname, 'public')));
+
+app.set('view engine', 'ejs');
+app
+  .set('port', port)
+  .set('views', path.join(__dirname, 'views'))
+  .set('view engine', 'ejs');
+
+  app.get('/persons',(req,res)=>{
+  res.json(persons);
+})
+
+// obtiene la info de la app
+app.get('/persons/info',(req,res)=>{
+  // res.send(`<p>${new Date()}</p>`);
+  res.send(` 
+  <p>Phonebook has info for ${persons.length} people</p>
+  <p> ${new Date()}</p>
+  ` 
+  );
+
+})
+
+
+// obtiene por id de la persona 
+  app.get('/persons/:id',(req,res)=>{
+const id=parseInt(req.params.id);
+const person = persons.find(person => person.id === id);
+if (!person) {
+  return res.status(404).json({ error: 'Persona no encontrada' });
+}
+
+res.json(person)
+
+})
+
+// elimina usuario
+  app.delete('/persons/:id', (req, res) => {
+  const id=parseInt(req.params.id);
+  const person=persons.filter(person=>person.id===id);
+  if(!person){
+    return res.status(404).json({error:'Persona no encontrada'})
+
+  }
+  const deletedPerson = persons.splice(personIndex, 1);
+  res.json(deletedPerson[0]);
+  res.json(person)
+})
+
+// genera id
+
+const generateId = () => {
+  const maxId = persons.length > 0 ? Math.max(...persons.map(n => n.id)) : 0;
+  return maxId + 1;
+};
+
+
+// agrega persona
+app.post('/persons',(req,res)=>{
+const {name,numbrer}=req.body;
+const s=persons.find(person=>person.name===name);
+const n=persons.find(person=>person.numbrer===numbrer);
+
+if(!name||!numbrer) {
+  return res.status(400).json({error:'Nombre y Número requerido'})
+}
+
+if(s && n){
+  return res.status(400).json({error:'Nombre ya existe'})
+}
+// if(n){
+  // return res.status(400).json({error:'Número ya existe'})
+
+
+const person={
+  id:generateId(),
+  name,
+  numbrer,
+
+  // id:persons.length+1
+}
+persons.push(person);
+res.json(person)
+
+
+})
+
+app.listen(port, () => {
+  console.log(`Listening on http://localhost:${port}`);
+})
+----------------------------------------------------------------------------------------------------------------------------------------------------
+---------------------------App.tsx-------------------------------------------------------------------------------------------------------------------
+import React, { useState, useEffect, ChangeEvent, FormEvent } from 'react';
+import axios from 'axios'; // Importa AxiosError para manejar errores específicos de Axios
+
+interface Person {
+  id: number;
+  name: string;
+  number: string;
+}
+
+const App: React.FC = () => {
+  const [persons, setPersons] = useState<Person[]>([]);
+  const [newName, setNewName] = useState<string>('');
+  const [newNumber, setNewNumber] = useState<string>('');
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await axios.get('/persons');
+        setPersons(response.data);
+      } catch (error) {
+   if(axios.isAxiosError(error)){
+    console.error('Error fetching persons:', error)
+    setErrorMessage(error.response?.data.error || 'Error fetching persons');
+    } else{
+     console.error('error unexpected')
+     setErrorMessage('Error desconocido');
+
+}
+      }
+    };
+    fetchData();
+  }, []);
+
+  const addPerson = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    try {
+      const response = await axios.post('/persons', { name: newName, number: newNumber });
+      setPersons([...persons, response.data]);
+      setNewName('');
+      setNewNumber('');
+      setErrorMessage(null);
+    } catch (error) {
+if(axios.isAxiosError(error)){
+  console.error('Error adding person:', error)
+  setErrorMessage(error.response?.data.error || 'Error adding person');
+} else{
+  console.error('error unexpected')
+  setErrorMessage('Error desconocido');
+
+}
+     
+    }
+  };
+
+  const deletePerson = async (id: number) => {
+    try {
+      await axios.delete(`/persons/${id}`);
+      const updatedPersons = persons.filter(person => person.id !== id);
+      setPersons(updatedPersons);
+    } catch (error) {
+      if(axios.isAxiosError(error)){
+        console.error('Error deleting person:', error)
+        setErrorMessage(error.response?.data.error || 'Error deleting person');
+      } else{
+        console.error('error unexpected')
+        setErrorMessage('Error desconocido');
+  
+      }
+     
+    }
+  };
+
+  const handleNameChange = (event: ChangeEvent<HTMLInputElement>) => {
+    setNewName(event.target.value);
+  };
+
+  const handleNumberChange = (event: ChangeEvent<HTMLInputElement>) => {
+    setNewNumber(event.target.value);
+  };
+
+  
+  return (
+    
+    <div>
+      <h1>Phonebook</h1>
+      {errorMessage && <div className="error">{errorMessage}</div>}
+
+      <form onSubmit={addPerson}>
+        <div>
+          Name: <input value={newName} onChange={handleNameChange} />
+        </div>
+        <div>
+          Phone Number: <input value={newNumber} onChange={handleNumberChange} />
+        </div>
+        <div>
+          <button type="submit">Add</button>
+        </div>
+      </form>
+
+      <h2>Numbers</h2>
+      {persons.length > 0 ? (
+        <ul>
+          {persons.map(person => (
+            <li key={person.id}>
+              {person.name} {person.number}
+              <button onClick={() => deletePerson(person.id)}>Delete</button>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p>No persons in the phonebook</p>
+      )}
+    </div>
+  );
+};
+
+
+export default App;
+
+
+-------------------------main.tsx-------------------------------------------------------------------------------------------
+
+
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import App from './App.tsx';
+import './css/Styles.css';
+
+const rootElement = document.getElementById('root');
+
+if (rootElement) {
+  const root = ReactDOM.createRoot(rootElement);
+  root.render(
+    <React.StrictMode>
+      <App />
+    </React.StrictMode>
+  );
+} else {
+  console.error('Failed to find the root element');
+}
+
+
+-----------------------------------------------------------------------------------------------------------------------------
+
+----------------------------------------------------------------------------------------------------------------------------------------------------
+
 mainImage: ../../../images/part-3.svg
 part: 3
 letter: b
