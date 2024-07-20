@@ -1,4 +1,35 @@
----
+---async.test.js----------------
+describe('GET /api/users', async () => {
+  it('should return a list of blogs in JSON format', async () => {
+    const response = await request(app).get('/api/users');
+    expect(response.status).toBe(200);
+    expect(response.type).toBe('application/json');
+    const blogs = await response.json();
+    expect(blogs.length).toBeGreaterThan(0);
+    expect(blogs.length).toBe(5);
+  });
+});
+--------- promise.test.js-------------------
+
+
+
+
+const supertest = require('supertest');
+const app = require('../index2'); // Reemplaza con la ruta a tu archivo principal
+
+const api = supertest(app);
+
+describe('GET /api/users', () => {
+  it('should return a list of users in JSON format', async () => {
+    await connectToMongoose(); // Llama a la función connectToMongoose antes de realizar la solicitud
+    const response = await api.get('/api/users');
+    expect(response.status).toBe(200);
+    expect(response.type).toBe('application/json');
+    const users = response.body;
+    expect(users.length).toBeGreaterThan(0); // Verifica que la lista no esté vacía
+    expect(users.length).toBe(UserData.length); // Verifica que la cantidad de usuarios sea correcta
+  });
+});
 mainImage: ../../../images/part-4.svg
 part: 4
 letter: b
