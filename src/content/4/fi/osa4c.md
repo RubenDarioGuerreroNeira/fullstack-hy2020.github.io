@@ -1,4 +1,240 @@
----
+---UserBlogController.js----------------
+const bcrypt = require('bcrypt')
+
+const userRoutes=require('express').Router()
+const User=require('../models/user')
+
+//----USERS-------
+userRoutes.delete('/:id', (request, response, next) => {
+    User.findByIdAndRemove(request.params.id)
+      .then(() => {
+        response.status(204).end();
+      })
+      .catch(error => next(error));
+  });
+  
+  
+  userRoutes.post('/',async(req,res)=>{
+    const user = req.body;
+    // const { username, name, password } = req.body
+
+    const userObject = new User({
+      username: user.username,
+      name: user.name,
+      number: user.number,
+      
+    });
+      userObject.save()
+      .then(result => {
+        res.json(result);
+      })
+      .catch(error => {
+        res.status(400).json({
+          error: error.message
+        });
+      });
+    // const saltRounds = 10
+    // const passwordHash = await bcrypt.hash(password, saltRounds)
+  
+    // const user = new User({
+    //   username,
+    //   name,
+    //   passwordHash,
+    // })
+  
+    // const savedUser = await user.save()
+  
+    // response.status(201).json(savedUser)
+
+  });
+  
+  
+  userRoutes.put('/:id', (request, response, next) => {
+    const { name, number } = request.body;
+    User.findByIdAndUpdate(
+      request.params.id,
+      { name, number },
+      { new: true, runValidators: true, context: 'query' }
+    )
+      .then(updatedUser => {
+        response.json(updatedUser);
+      })
+      .catch(error => next(error));
+  });
+  
+  
+  userRoutes.get('/', async (req, res) => {
+  try {
+    const users = await User.find({}).populate('notes',{ content: 1, important: 1 });
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({ error: 'Error al obtener los usuarios' });
+  }
+  });
+  
+  module.exports=userRoutes;
+----------------------------------------
+
+-----------NotesBlogController.js-------------------------
+
+const notesRouter = require('express').Router()
+const Note=require('../models/note')
+const User=require('../models/user')
+
+// NOTES------------
+
+notesRouter.post('/',async(req,res)=>{
+  const note = req.body;
+  const user = await User.findById(note.userId)
+  
+  const noteObject = new Note({
+    content: note.content,
+    important: note.important===undefined? false:note.important,
+    user: user._id
+  });
+  
+  noteObject.save()
+    .then(result => {
+      user.notes = user.notes.concat(noteObject._id)
+      res.json(result);
+    })
+    .catch(error => {
+      res.status(400).json({
+        error: error.message
+      });
+    });
+
+
+
+});
+
+notesRouter.get('/', async (req, res) => {
+    try {
+      const notes = await Note.find({}).populate('user', { username: 1, name: 1 });
+      res.json(notes);
+    } catch (error) {
+      res.status(500).json({ error: 'Error al obtener las notas' });
+    }
+  });
+  
+  
+  
+  notesRouter.get('/:id', (request, response, next) => {
+    Note.findById(request.params.id)
+      .then(note => {
+        if (note) {
+          response.json(note)
+        } else {
+          response.status(404).end()
+        }
+      })
+      .catch(error => next(error))
+  })
+  notesRouter.delete('/:id', (request, response, next) => {
+    Note.findByIdAndDelete(request.params.id)
+      .then(() => {
+        response.status(204).end()
+      })
+      .catch(error => next(error))
+  })
+  
+  notesRouter.put('/:id', (request, response, next) => {
+    const body = request.body
+  
+    const note = {
+      content: body.content,
+      important: body.important,
+    }
+    Note.findByIdAndUpdate(request.params.id, note, { new: true })
+    .then(updatedNote => {
+      response.json(updatedNote)
+    })
+    .catch(error => next(error))
+})  
+
+
+module.exports = notesRouter
+--------------------------------------------------------------------------------------------------------
+----------------Blog.js-----------------------------------------------------------------------------------
+
+const express = require('express');
+const path = require('path');
+require('dotenv').config();
+const app = express();
+app.use(express.json());
+const morgan = require('morgan');
+const mongoose = require('mongoose');
+// const Blog = require('./models/BlogModel');
+const User=require('./models/user');
+
+
+const cors = require('cors');
+app.use(morgan('tiny'));
+
+const NoteRoutes = require('./Controllers/NotesBlogController');
+const UserRoutes = require('./Controllers/UserBlogControllers');
+
+
+app.use(cors());
+
+const connectToMongoose = async () => {
+  const url = `mongodb+srv://rudargeneira:${process.env.MONGO_PASSWORD}@cluster0.mvojlb2.mongodb.net/BlogApp?retryWrites=true&w=majority&appName=Cluster0`;
+  console.log('Conectando a MongoDB en:', url); // Imprime la URL de conexión
+  mongoose.set('strictQuery', false);
+
+  try {
+    await mongoose.connect(url);
+    console.log('Connected to MongoDB');
+  } catch (error) {
+    console.error('Error connecting to MongoDB:', error.message);
+  }
+};
+
+connectToMongoose();
+
+app.use('/api/note', NoteRoutes);
+app.use('/api/user', UserRoutes);
+
+// Middleware HANDLER ERROR
+app.use((error, request, response, next) => {
+  console.error(error.message);
+  if (error.name === 'CastError' && error.kind === 'ObjectId') {
+    return response.status(400).send({ error: 'Malformatted ID' });
+  } else if (error.name === 'ValidationError') {
+    return response.status(400).json({ error: error.message });
+  } else if (error.name === 'MongoServerError' && error.message.includes('E11000 duplicate key error')) {
+    return response.status(400).json({ error: 'expected `username` to be unique' })
+  }
+  next(error);
+});
+
+
+const port = 5059;
+
+app.listen(port, () => {
+  console.log(`Listening on http://localhost:${port}`);
+  // console.log(User.schema.paths)
+});
+
+
+
+
+-------------------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 mainImage: ../../../images/part-4.svg
 part: 4
 letter: c
