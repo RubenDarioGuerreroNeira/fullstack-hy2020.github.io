@@ -1,4 +1,178 @@
----
+
+
+---Blog.js---------------
+const express = require('express');
+const path = require('path');
+require('dotenv').config();
+const app = express();
+app.use(express.json());
+const morgan = require('morgan');
+const mongoose = require('mongoose');
+// const Blog = require('./models/BlogModel');
+const User=require('./models/user');
+const Login=require('./Controllers/login')
+
+
+
+const cors = require('cors');
+app.use(morgan('tiny'));
+
+const NoteRoutes = require('./Controllers/NotesBlogController');
+const UserRoutes = require('./Controllers/UserBlogControllers');
+
+
+app.use(cors());
+
+const connectToMongoose = async () => {
+  const url = `mongodb+srv://rudargeneira:${process.env.MONGO_PASSWORD}@cluster0.mvojlb2.mongodb.net/BlogApp?retryWrites=true&w=majority&appName=Cluster0`;
+  console.log('Conectando a MongoDB en:', url); // Imprime la URL de conexión
+  mongoose.set('strictQuery', false);
+
+  try {
+    await mongoose.connect(url);
+    console.log('Connected to MongoDB');
+  } catch (error) {
+    console.error('Error connecting to MongoDB:', error.message);
+  }
+};
+
+connectToMongoose();
+
+app.use('/api/note', NoteRoutes);
+app.use('/api/user', UserRoutes);
+app.use('/api/login',Login)
+
+// Middleware HANDLER ERROR
+app.use((error, request, response, next) => {
+  console.error(error.message);
+  if (error.name === 'CastError' && error.kind === 'ObjectId') {
+    return response.status(400).send({ error: 'Malformatted ID' });
+  } else if (error.name === 'ValidationError') {
+    return response.status(400).json({ error: error.message });
+  } else if (error.name === 'MongoServerError' && error.message.includes('E11000 duplicate key error')) {
+    return response.status(400).json({ error: 'expected `username` to be unique' })
+  
+  } else if (error.name ===  'JsonWebTokenError') {
+    return response.status(400).json({ error: 'token missing or invalid' })
+
+  } else if (error.name === 'TokenExpiredError') {
+    return response.status(401).json({
+      error: 'token expired'
+    })
+  } else {
+    response.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+// Middleware HANDLER ERROR
+app.use((error, request, response, next) => {
+  console.error(error.message);
+  if (error.name === 'CastError' && error.kind === 'ObjectId') {
+    return response.status(400).send({ error: 'Malformatted ID' });
+  } else if (error.name === 'ValidationError') {
+    return response.status(400).json({ error: error.message });
+  } else if (error.name === 'MongoServerError' && error.message.includes('E11000 duplicate key error')) {
+    return response.status(400).json({ error: 'expected `username` to be unique' });
+  } else if (error.name ===  'JsonWebTokenError') {
+    return response.status(400).json({ error: 'token missing or invalid' });
+  } else if (error.name === 'TokenExpiredError') {
+    return response.status(401).json({
+      error: 'token expired'
+    });
+  }
+  
+  next(error);
+});
+
+
+const port = 5059;
+
+app.listen(port, () => {
+  console.log(`Listening on http://localhost:${port}`);
+  // console.log(User.schema.paths)
+});
+
+
+--------Login.js------------------
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcrypt');
+const loginRouter = require('express').Router();
+const User = require('../models/user');
+
+loginRouter.post('/', async (request, response) => {
+  const { username, password } = request.body;
+
+  // Verifica que username y password están presentes
+  if (!username || !password) {
+    return response.status(400).json({ error: 'Username and password are required' });
+  }
+
+  try {
+    const user = await User.findOne({ username });
+
+    // Verifica si el usuario existe
+    if (!user) {
+      return response.status(401).json({ error: 'invalid username or password' });
+    }
+
+    // Compara la contraseña
+    const passwordCorrect = await bcrypt.compare(password, user.passwordHash); // Asegúrate de usar el nombre correcto del campo
+
+    if (!passwordCorrect) {
+      return response.status(401).json({ error: 'invalid username or password' });
+    }
+
+    const userForToken = {
+      username: user.username,
+      id: user._id,
+    };
+
+    // token expires in 60*60 seconds, that is, in one hour
+    const token = jwt.sign(userForToken, process.env.SECRET,{ expiresIn: 60*60 });
+
+
+    response.status(200).send({ token, username: user.username, name: user.name });
+  } catch (error) {
+    console.error('Error during login:', error);
+    response.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+module.exports = loginRouter;
+
+
+
+---------------------------------
+
+
+-------------(MIDDLEWARE)----- middToken.js--------
+// middToken.js
+const jwt = require('jsonwebtoken');
+
+const tokenExtractor = (request, response, next) => {
+  const authorization = request.get('authorization');
+  if (authorization && authorization.toLowerCase().startsWith('bearer ')) {
+    const token = authorization.substring(7);
+    try {
+      const decoded = jwt.verify(token, process.env.SECRET);
+      request.user = decoded;
+    } catch (error) {
+      return response.status(401).json({ error: 'Invalid token' });
+    }
+  } else {
+    return response.status(401).json({ error: 'Token is missing' });
+  }
+  next();
+};
+
+module.exports = tokenExtractor;
+---------------------------------------------------
+
+
+
+
+
+
 mainImage: ../../../images/part-4.svg
 part: 4
 letter: d
